@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chaos Bridge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Gemini-Powered Intent Orchestration</p>
+          <h1>Chaos Bridge</h1>
+          <p class="hero-text">
+            A universal interface that turns messy human signals into structured, verified, life-saving action.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div class="stat">
+            <span>Mission</span>
+            <strong>Human intent to real-world response</strong>
+          </div>
+          <div class="stat">
+            <span>Inputs</span>
+            <strong>Voice, photos, medical notes, news, traffic, weather</strong>
+          </div>
+          <div class="stat">
+            <span>Outputs</span>
+            <strong>Structured triage, verification, routing, escalation</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="panel intake-panel">
+          <div class="panel-heading">
+            <h2>Messy Intake</h2>
+            <p>Drop in what the world actually looks like, not what forms wish it looked like.</p>
+          </div>
+
+          <form id="incident-form">
+            <label class="field">
+              <span>Primary situation</span>
+              <textarea
+                id="rawInput"
+                name="rawInput"
+                rows="8"
+                placeholder="Example: Elderly man collapsed at a flooded bus stop. Daughter says he has chest pain, diabetes, and missed meds. Traffic is gridlocked and the clinic is closed."
+                required
+              ></textarea>
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Intent / desired outcome</span>
+                <input id="intent" name="intent" placeholder="Keep patient alive and get the right help fast" />
+              </label>
+              <label class="field">
+                <span>Location hint</span>
+                <input id="locationHint" name="locationHint" placeholder="Bus depot, Ward 7, East Delhi" />
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Voice transcript or operator notes</span>
+              <textarea
+                id="operatorNotes"
+                name="operatorNotes"
+                rows="4"
+                placeholder="Paste rushed phone transcript, witness notes, or fragmented history here."
+              ></textarea>
+            </label>
+
+            <fieldset class="signals">
+              <legend>Signal channels</legend>
+              <label><input type="checkbox" name="signalTypes" value="voice" checked /> Voice</label>
+              <label><input type="checkbox" name="signalTypes" value="medical_history" checked /> Medical history</label>
+              <label><input type="checkbox" name="signalTypes" value="weather" /> Weather</label>
+              <label><input type="checkbox" name="signalTypes" value="traffic" /> Traffic</label>
+              <label><input type="checkbox" name="signalTypes" value="news" /> News</label>
+              <label><input type="checkbox" name="signalTypes" value="image" checked /> Photo evidence</label>
+            </fieldset>
+
+            <label class="upload-zone" for="imageFiles">
+              <span>Attach image evidence</span>
+              <strong>Upload snapshots of injuries, damage, surroundings, forms, or handwritten notes</strong>
+              <input id="imageFiles" name="imageFiles" type="file" accept="image/*" multiple />
+            </label>
+
+            <div id="file-list" class="file-list"></div>
+
+            <button class="submit-button" type="submit">Bridge Intent Into Action</button>
+          </form>
+        </section>
+
+        <section class="panel results-panel">
+          <div class="panel-heading">
+            <h2>Structured Response</h2>
+            <p>Gemini extracts the signal, verifies it, and prepares a handoff-ready action plan.</p>
+          </div>
+
+          <div id="status-card" class="status-card">
+            <p>Waiting for intake.</p>
+          </div>
+
+          <div id="results" class="results hidden">
+            <div class="summary-card">
+              <div>
+                <span class="mini-label">Situation</span>
+                <h3 id="situation-summary"></h3>
+              </div>
+              <div class="severity-group">
+                <div class="severity-pill" id="severity-pill">unknown</div>
+                <div class="confidence-block">
+                  <span class="mini-label">Confidence</span>
+                  <strong id="confidence"></strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-grid">
+              <article class="result-card">
+                <span class="mini-label">Immediate Actions</span>
+                <ul id="actions"></ul>
+              </article>
+              <article class="result-card">
+                <span class="mini-label">Verification Checks</span>
+                <ul id="verification"></ul>
+              </article>
+              <article class="result-card">
+                <span class="mini-label">Route To</span>
+                <ul id="routing"></ul>
+              </article>
+              <article class="result-card">
+                <span class="mini-label">Hazards</span>
+                <ul id="hazards"></ul>
+              </article>
+            </div>
+
+            <div class="result-grid secondary">
+              <article class="result-card">
+                <span class="mini-label">Evidence Extracted</span>
+                <ul id="evidence"></ul>
+              </article>
+              <article class="result-card">
+                <span class="mini-label">Missing Information</span>
+                <ul id="missing"></ul>
+              </article>
+              <article class="result-card wide">
+                <span class="mini-label">Structured Entities & Timeline</span>
+                <div class="dual-list">
+                  <div>
+                    <h4>Entities</h4>
+                    <ul id="entities"></ul>
+                  </div>
+                  <div>
+                    <h4>Timeline</h4>
+                    <ul id="timeline"></ul>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>

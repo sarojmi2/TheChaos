@@ -1,0 +1,9 @@
+{
+  "name": "chaos-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gemini-powered universal bridge between human intent and complex systems.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
