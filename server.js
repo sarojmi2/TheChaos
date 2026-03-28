@@ -193,6 +193,10 @@ const { GoogleAuth } = require('google-auth-library');
 let authClient;
 
 async function getGeminiCredentials() {
+  if (process.env.GEMINI_API_KEY) {
+    return { type: "key", value: process.env.GEMINI_API_KEY.trim() };
+  }
+  
   if (!authClient) {
     authClient = new GoogleAuth({
       scopes: 'https://www.googleapis.com/auth/cloud-platform'
@@ -201,23 +205,24 @@ async function getGeminiCredentials() {
   
   const client = await authClient.getClient();
   const tokenInfo = await client.getAccessToken();
-  return tokenInfo.token;
+  return { type: "bearer", value: tokenInfo.token };
 }
 
 async function callGemini(payload) {
-  const token = await getGeminiCredentials();
+  const credentials = await getGeminiCredentials();
   
-  const PROJECT_ID = GCP_PROJECT_ID || "gen-lang-client-0373787555";
-  const LOCATION = "us-central1"; // Vertex standard region
-  
-  const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
+  const url = credentials.type === "key"
+    ? `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${credentials.value}`
+    : `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+  const headers = { "Content-Type": "application/json" };
+  if (credentials.type === "bearer") {
+    headers["Authorization"] = `Bearer ${credentials.value}`;
+  }
 
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 
