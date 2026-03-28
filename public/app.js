@@ -10,25 +10,32 @@ const state = {
 
 function renderFileList() {
   if (!state.files.length) {
-    fileList.innerHTML = '<p class="helper-text">No images attached yet.</p>';
+    const p = document.createElement("p");
+    p.className = "helper-text";
+    p.textContent = "No images attached yet.";
+    fileList.replaceChildren(p);
     return;
   }
 
-  fileList.innerHTML = state.files
-    .map(
-      (file) => `
-        <div class="file-chip">
-          <span>${file.name}</span>
-          <small>${Math.round(file.size / 1024)} KB</small>
-        </div>
-      `
-    )
-    .join("");
+  fileList.replaceChildren(
+    ...state.files.map((file) => {
+      const chip = document.createElement("div");
+      chip.className = "file-chip";
+      const name = document.createElement("span");
+      name.textContent = file.name;
+      const size = document.createElement("small");
+      size.textContent = `${Math.round(file.size / 1024)} KB`;
+      chip.append(name, size);
+      return chip;
+    })
+  );
 }
 
 function setStatus(message, tone = "neutral") {
   statusCard.className = `status-card ${tone}`;
-  statusCard.innerHTML = `<p>${message}</p>`;
+  const p = document.createElement("p");
+  p.textContent = message;
+  statusCard.replaceChildren(p);
 }
 
 function readFileAsBase64(file) {
@@ -55,9 +62,14 @@ function getSignalTypes() {
 
 function renderList(id, items) {
   const element = document.getElementById(id);
-  element.innerHTML = (items && items.length ? items : ["No items available."])
-    .map((item) => `<li>${item}</li>`)
-    .join("");
+  const list = items && items.length ? items : ["No items available."];
+  element.replaceChildren(
+    ...list.map((item) => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      return li;
+    })
+  );
 }
 
 function renderResult(structured, demoMode) {
@@ -91,9 +103,13 @@ fileInput.addEventListener("change", async (event) => {
   renderFileList();
 });
 
+const submitBtn = form.querySelector(".submit-button");
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   results.classList.add("hidden");
+  submitBtn.disabled = true;
+  submitBtn.setAttribute("aria-busy", "true");
   setStatus("Analyzing messy input, extracting signal, and verifying a response plan...", "loading");
 
   const payload = {
@@ -118,9 +134,16 @@ form.addEventListener("submit", async (event) => {
       throw new Error(data.detail || data.error || "Unknown server error");
     }
 
-    renderResult(data.structured, data.demo_mode);
+    if (!data.structured || typeof data.structured !== "object") {
+      throw new Error("Unexpected response format from server");
+    }
+
+    renderResult(data.structured, Boolean(data.demo_mode));
   } catch (error) {
     setStatus(`Analysis failed: ${error.message}`, "error");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.removeAttribute("aria-busy");
   }
 });
 

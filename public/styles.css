@@ -246,9 +246,11 @@ input:focus {
   background: rgba(31, 41, 51, 0.08);
 }
 
-.helper-text {
+.helper-text,
+.field-hint {
   margin: 0;
   color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .submit-button {
@@ -310,10 +312,12 @@ input:focus {
   margin-bottom: 18px;
 }
 
-.summary-card h3 {
+.summary-card h3,
+.summary-heading {
   margin: 10px 0 0;
   font-size: 1.5rem;
   line-height: 1.25;
+  font-weight: 700;
 }
 
 .severity-group {

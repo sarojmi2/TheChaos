@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
@@ -22,7 +22,7 @@
             A universal interface that turns messy human signals into structured, verified, life-saving action.
           </p>
         </div>
-        <div class="hero-panel">
+        <div class="hero-panel" aria-label="System capabilities">
           <div class="stat">
             <span>Mission</span>
             <strong>Human intent to real-world response</strong>
@@ -39,47 +39,53 @@
       </header>
 
       <main class="grid">
-        <section class="panel intake-panel">
+        <section class="panel intake-panel" aria-label="Incident intake">
           <div class="panel-heading">
             <h2>Messy Intake</h2>
             <p>Drop in what the world actually looks like, not what forms wish it looked like.</p>
           </div>
 
-          <form id="incident-form">
-            <label class="field" for="rawInput">
-              <span>Primary situation</span>
+          <form id="incident-form" aria-label="Incident intake form" novalidate>
+            <div class="field">
+              <label for="rawInput">Primary situation <span aria-hidden="true">*</span></label>
               <textarea
                 id="rawInput"
                 name="rawInput"
                 rows="8"
-                placeholder="Example: Elderly man collapsed at a flooded bus stop. Daughter says he has chest pain, diabetes, and missed meds. Traffic is gridlocked and the clinic is closed."
+                aria-describedby="rawInput-hint"
+                aria-required="true"
+                placeholder="Describe what is happening — field report, 911 transcript, witness account, medical note."
                 required
               ></textarea>
-            </label>
-
-            <div class="field-row">
-              <label class="field" for="intent">
-                <span>Intent / desired outcome</span>
-                <input id="intent" name="intent" placeholder="Keep patient alive and get the right help fast" />
-              </label>
-              <label class="field" for="locationHint">
-                <span>Location hint</span>
-                <input id="locationHint" name="locationHint" placeholder="Bus depot, Ward 7, East Delhi" />
-              </label>
+              <span id="rawInput-hint" class="field-hint">Describe the incident in any format. Incomplete information is fine.</span>
             </div>
 
-            <label class="field" for="operatorNotes">
-              <span>Voice transcript or operator notes</span>
+            <div class="field-row">
+              <div class="field">
+                <label for="intent">Intent / desired outcome</label>
+                <input id="intent" name="intent" type="text" placeholder="Keep patient alive and get the right help fast" aria-describedby="intent-hint" />
+                <span id="intent-hint" class="field-hint">What outcome do you need?</span>
+              </div>
+              <div class="field">
+                <label for="locationHint">Location hint</label>
+                <input id="locationHint" name="locationHint" type="text" placeholder="Bus depot, Ward 7, East Delhi" aria-describedby="location-hint" />
+                <span id="location-hint" class="field-hint">Nearest landmark, address, or zone.</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="operatorNotes">Voice transcript or operator notes</label>
               <textarea
                 id="operatorNotes"
                 name="operatorNotes"
                 rows="4"
                 placeholder="Paste rushed phone transcript, witness notes, or fragmented history here."
               ></textarea>
-            </label>
+            </div>
 
-            <fieldset class="signals">
+            <fieldset class="signals" aria-describedby="signals-hint">
               <legend>Signal channels</legend>
+              <span id="signals-hint" class="field-hint">Select all input types present in this incident.</span>
               <label><input type="checkbox" name="signalTypes" value="voice" checked /> Voice</label>
               <label><input type="checkbox" name="signalTypes" value="medical_history" checked /> Medical history</label>
               <label><input type="checkbox" name="signalTypes" value="weather" /> Weather</label>
@@ -88,81 +94,87 @@
               <label><input type="checkbox" name="signalTypes" value="image" checked /> Photo evidence</label>
             </fieldset>
 
-            <label class="upload-zone" for="imageFiles">
-              <span>Attach image evidence</span>
-              <strong>Upload snapshots of injuries, damage, surroundings, forms, or handwritten notes</strong>
-              <input id="imageFiles" name="imageFiles" type="file" accept="image/*" multiple />
-            </label>
+            <div class="field">
+              <label for="imageFiles" class="upload-zone">
+                <span>Attach image evidence</span>
+                <strong>Upload snapshots of injuries, damage, surroundings, forms, or handwritten notes</strong>
+                <input id="imageFiles" name="imageFiles" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple aria-describedby="file-hint" />
+              </label>
+              <span id="file-hint" class="field-hint">Accepted: JPG, PNG, WEBP, GIF. Max 10 MB per file.</span>
+            </div>
 
-            <div id="file-list" class="file-list"></div>
+            <div id="file-list" class="file-list" aria-live="polite" aria-label="Attached files"></div>
 
-            <button class="submit-button" type="submit">Bridge Intent Into Action</button>
+            <button class="submit-button" type="submit" aria-label="Analyze incident and generate structured response">
+              Analyze Incident
+            </button>
           </form>
         </section>
 
-        <section class="panel results-panel">
+        <section class="panel results-panel" aria-label="Analysis results">
           <div class="panel-heading">
             <h2>Structured Response</h2>
             <p>Gemini extracts the signal, verifies it, and prepares a handoff-ready action plan.</p>
           </div>
 
-          <div id="status-card" class="status-card" role="status" aria-live="polite">
+          <output id="status-card" class="status-card" aria-live="polite" aria-atomic="true">
             <p>Waiting for intake.</p>
-          </div>
+          </output>
 
-          <div id="results" class="results hidden">
+          <div id="results" class="results hidden" aria-live="polite">
             <div class="summary-card">
               <div>
-                <span class="mini-label">Situation</span>
-                <h3 id="situation-summary"></h3>
+                <span class="mini-label" id="situation-label">Situation</span>
+                <p id="situation-summary" class="summary-heading" aria-labelledby="situation-label"></p>
               </div>
               <div class="severity-group">
-                <div class="severity-pill" id="severity-pill">unknown</div>
+                <output class="severity-pill" id="severity-pill" aria-label="Severity level">unknown</output>
                 <div class="confidence-block">
-                  <span class="mini-label">Confidence</span>
-                  <strong id="confidence"></strong>
+                  <span class="mini-label" id="confidence-label">Model confidence</span>
+                  <strong id="confidence" aria-labelledby="confidence-label" aria-describedby="confidence-desc"></strong>
+                  <span id="confidence-desc" class="field-hint">How certain Gemini is about this analysis.</span>
                 </div>
               </div>
             </div>
 
             <div class="result-grid">
               <article class="result-card">
-                <span class="mini-label">Immediate Actions</span>
-                <ul id="actions"></ul>
+                <h3 class="mini-label">Immediate Actions</h3>
+                <ul id="actions" aria-label="Immediate actions"></ul>
               </article>
               <article class="result-card">
-                <span class="mini-label">Verification Checks</span>
-                <ul id="verification"></ul>
+                <h3 class="mini-label">Verification Checks</h3>
+                <ul id="verification" aria-label="Verification checks"></ul>
               </article>
               <article class="result-card">
-                <span class="mini-label">Route To</span>
-                <ul id="routing"></ul>
+                <h3 class="mini-label">Route To</h3>
+                <ul id="routing" aria-label="Routing targets"></ul>
               </article>
               <article class="result-card">
-                <span class="mini-label">Hazards</span>
-                <ul id="hazards"></ul>
+                <h3 class="mini-label">Hazards</h3>
+                <ul id="hazards" aria-label="Identified hazards"></ul>
               </article>
             </div>
 
             <div class="result-grid secondary">
               <article class="result-card">
-                <span class="mini-label">Evidence Extracted</span>
-                <ul id="evidence"></ul>
+                <h3 class="mini-label">Evidence Extracted</h3>
+                <ul id="evidence" aria-label="Extracted evidence"></ul>
               </article>
               <article class="result-card">
-                <span class="mini-label">Missing Information</span>
-                <ul id="missing"></ul>
+                <h3 class="mini-label">Missing Information</h3>
+                <ul id="missing" aria-label="Missing information gaps"></ul>
               </article>
               <article class="result-card wide">
-                <span class="mini-label">Structured Entities & Timeline</span>
+                <h3 class="mini-label">Structured Entities &amp; Timeline</h3>
                 <div class="dual-list">
                   <div>
                     <h4>Entities</h4>
-                    <ul id="entities"></ul>
+                    <ul id="entities" aria-label="Extracted entities"></ul>
                   </div>
                   <div>
                     <h4>Timeline</h4>
-                    <ul id="timeline"></ul>
+                    <ul id="timeline" aria-label="Event timeline"></ul>
                   </div>
                 </div>
               </article>
@@ -174,4 +186,4 @@
 
     <script src="/app.js"></script>
   </body>
-  </html>
+</html>

@@ -22,6 +22,8 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -45,7 +47,7 @@ function sendJson(res, statusCode, payload) {
   applySecurityHeaders(res);
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": CORS_ORIGIN,
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   });
@@ -54,15 +56,18 @@ function sendJson(res, statusCode, payload) {
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    let data = "";
+    const chunks = [];
+    let totalLength = 0;
     req.on("data", (chunk) => {
-      data += chunk;
-      if (data.length > 10 * 1024 * 1024) {
+      totalLength += chunk.length;
+      if (totalLength > 10 * 1024 * 1024) {
         reject(new Error("Payload too large"));
         req.destroy();
+        return;
       }
+      chunks.push(chunk);
     });
-    req.on("end", () => resolve(data));
+    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
     req.on("error", reject);
   });
 }
@@ -78,6 +83,8 @@ function serveStatic(req, res) {
     return;
   }
 
+  const ext = path.extname(filePath).toLowerCase();
+
   fs.stat(filePath, (err, stat) => {
     if (err || !stat.isFile()) {
       sendJson(res, 404, { error: "Not found" });
@@ -86,7 +93,7 @@ function serveStatic(req, res) {
 
     applySecurityHeaders(res);
     res.setHeader("Cache-Control", "public, max-age=86400");
-    res.writeHead(200, { 
+    res.writeHead(200, {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
       "Content-Length": stat.size
     });
@@ -200,7 +207,7 @@ async function getGeminiCredentials() {
 async function callGemini(payload) {
   const token = await getGeminiCredentials();
   
-  const PROJECT_ID = "gen-lang-client-0373787555";
+  const PROJECT_ID = GCP_PROJECT_ID || "gen-lang-client-0373787555";
   const LOCATION = "us-central1"; // Vertex standard region
   
   const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
@@ -301,7 +308,9 @@ async function analyzeInput(input) {
     try {
       await getGeminiCredentials();
       canAuth = true;
-    } catch(e) {}
+    } catch (e) {
+      console.error("GCP credential check failed:", e.message);
+    }
   }
 
   if (!canAuth) {
@@ -399,7 +408,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     applySecurityHeaders(res);
     res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": CORS_ORIGIN,
       "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     });
@@ -419,7 +428,13 @@ const server = http.createServer(async (req, res) => {
   if (req.url === "/api/analyze" && req.method === "POST") {
     try {
       const rawBody = await readBody(req);
-      const body = JSON.parse(rawBody);
+      let body;
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        sendJson(res, 400, { error: "Invalid JSON in request body" });
+        return;
+      }
       const result = await analyzeInput(body);
       writeCloudLog(req, 'INFO', { action: 'analyze', success: true });
       sendJson(res, 200, result);
