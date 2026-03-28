@@ -419,3 +419,12 @@ input:focus {
     grid-column: span 1;
   }
 }
+
+/* Accessibility Focus States */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+label:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}

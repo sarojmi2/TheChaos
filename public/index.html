@@ -46,7 +46,7 @@
           </div>
 
           <form id="incident-form">
-            <label class="field">
+            <label class="field" for="rawInput">
               <span>Primary situation</span>
               <textarea
                 id="rawInput"
@@ -58,17 +58,17 @@
             </label>
 
             <div class="field-row">
-              <label class="field">
+              <label class="field" for="intent">
                 <span>Intent / desired outcome</span>
                 <input id="intent" name="intent" placeholder="Keep patient alive and get the right help fast" />
               </label>
-              <label class="field">
+              <label class="field" for="locationHint">
                 <span>Location hint</span>
                 <input id="locationHint" name="locationHint" placeholder="Bus depot, Ward 7, East Delhi" />
               </label>
             </div>
 
-            <label class="field">
+            <label class="field" for="operatorNotes">
               <span>Voice transcript or operator notes</span>
               <textarea
                 id="operatorNotes"
@@ -106,7 +106,7 @@
             <p>Gemini extracts the signal, verifies it, and prepares a handoff-ready action plan.</p>
           </div>
 
-          <div id="status-card" class="status-card">
+          <div id="status-card" class="status-card" role="status" aria-live="polite">
             <p>Waiting for intake.</p>
           </div>
 

@@ -1,5 +1,20 @@
 const http = require("http");
 const fs = require("fs");
+const { Logging } = require('@google-cloud/logging');
+const loggingClient = new Logging();
+const requestLog = loggingClient.log('chaos-bridge-requests');
+
+function writeCloudLog(req, severity, payload) {
+  try {
+    const entry = requestLog.entry(
+      { resource: { type: 'global' }, severity },
+      { method: req.method, url: req.url, payload }
+    );
+    requestLog.write(entry);
+  } catch (e) {
+    console.error(e);
+  }
+}
 const path = require("path");
 const { URL } = require("url");
 
@@ -19,7 +34,15 @@ const MIME_TYPES = {
   ".jpeg": "image/jpeg",
 };
 
+function applySecurityHeaders(res) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("Content-Security-Policy", "default-src 'self' data: https: fonts.googleapis.com fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; img-src 'self' data:; connect-src 'self' https://*.googleapis.com");
+}
+
 function sendJson(res, statusCode, payload) {
+  applySecurityHeaders(res);
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
@@ -55,15 +78,25 @@ function serveStatic(req, res) {
     return;
   }
 
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
+  fs.stat(filePath, (err, stat) => {
+    if (err || !stat.isFile()) {
       sendJson(res, 404, { error: "Not found" });
       return;
     }
 
-    const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" });
-    res.end(content);
+    applySecurityHeaders(res);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.writeHead(200, { 
+      "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
+      "Content-Length": stat.size
+    });
+
+    const stream = fs.createReadStream(filePath);
+    stream.on("error", () => {
+      if (!res.headersSent) res.writeHead(500);
+      res.end();
+    });
+    stream.pipe(res);
   });
 }
 
@@ -364,6 +397,7 @@ async function analyzeInput(input) {
 
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
+    applySecurityHeaders(res);
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
@@ -387,9 +421,12 @@ const server = http.createServer(async (req, res) => {
       const rawBody = await readBody(req);
       const body = JSON.parse(rawBody);
       const result = await analyzeInput(body);
+      writeCloudLog(req, 'INFO', { action: 'analyze', success: true });
       sendJson(res, 200, result);
     } catch (error) {
-      sendJson(res, 500, {
+      writeCloudLog(req, 'ERROR', { action: 'analyze', success: false, error: error.message });
+      const statusCode = error.message === "Payload too large" ? 413 : 500;
+      sendJson(res, statusCode, {
         error: "Analysis failed",
         detail: error.message,
       });
@@ -400,6 +437,10 @@ const server = http.createServer(async (req, res) => {
   serveStatic(req, res);
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Chaos Bridge listening on http://${HOST}:${PORT}`);
-});
+if (require.main === module) {
+  server.listen(PORT, HOST, () => {
+    console.log(`Chaos Bridge listening on http://${HOST}:${PORT}`);
+  });
+}
+
+module.exports = { server, buildDeterministicChecks, normalizeStructuredOutput };

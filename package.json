@@ -4,6 +4,14 @@
   "private": true,
   "description": "Gemini-powered universal bridge between human intent and complex systems.",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@google-cloud/logging": "^11.2.1",
+    "google-auth-library": "^10.6.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
