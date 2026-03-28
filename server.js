@@ -149,15 +149,37 @@ function buildDeterministicChecks(analysis) {
   };
 }
 
+const { GoogleAuth } = require('google-auth-library');
+let authClient;
+
+async function getGeminiCredentials() {
+  if (!authClient) {
+    authClient = new GoogleAuth({
+      scopes: 'https://www.googleapis.com/auth/cloud-platform'
+    });
+  }
+  
+  const client = await authClient.getClient();
+  const tokenInfo = await client.getAccessToken();
+  return tokenInfo.token;
+}
+
 async function callGemini(payload) {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
-  );
+  const token = await getGeminiCredentials();
+  
+  const PROJECT_ID = "gen-lang-client-0373787555";
+  const LOCATION = "us-central1"; // Vertex standard region
+  
+  const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify(payload),
+  });
 
   if (!response.ok) {
     const text = await response.text();
@@ -241,7 +263,15 @@ ${JSON.stringify(analysis, null, 2)}
 }
 
 async function analyzeInput(input) {
-  if (!GEMINI_API_KEY) {
+  let canAuth = !!GEMINI_API_KEY;
+  if (!canAuth) {
+    try {
+      await getGeminiCredentials();
+      canAuth = true;
+    } catch(e) {}
+  }
+
+  if (!canAuth) {
     return {
       demo_mode: true,
       structured: {
